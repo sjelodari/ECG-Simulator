@@ -1,0 +1,777 @@
+Ecg simulator · HTML
+Copy
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical ECG Processing Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #050b12;
+    --panel:     #080f18;
+    --border:    #0e2030;
+    --border2:   #15304a;
+    --txt:       #b8d0e8;
+    --txt-dim:   #3e6080;
+    --teal:      #00e5c8;
+    --teal-dim:  rgba(0,229,200,0.12);
+    --lime:      #b8f23a;
+    --fuchsia:   #e040fb;
+    --amber:     #ffb020;
+    --blue:      #38bdf8;
+    --red:       #f87171;
+    --orange:    #fb923c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--txt);
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    min-height: 100vh;
+    padding: 16px;
+    line-height: 1.4;
+  }
+  body::after {
+    content: '';
+    pointer-events: none;
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(to bottom, transparent 0px, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+    z-index: 9999;
+  }
+  .wrap { max-width: 1300px; margin: 0 auto; }
+
+  /* HEADER */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    background: var(--panel); border: 1px solid var(--border2);
+    border-top: 2px solid var(--teal);
+    padding: 14px 20px; border-radius: 4px; margin-bottom: 14px;
+    position: relative; overflow: hidden;
+  }
+  header::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: linear-gradient(to bottom, var(--teal), transparent);
+  }
+  .hd-left { display: flex; align-items: center; gap: 14px; }
+  .hd-icon { color: var(--teal); display: flex; align-items: center; padding: 8px; border: 1px solid var(--border2); border-radius: 4px; background: var(--teal-dim); }
+  .hd-title { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800; color: #fff; letter-spacing: 1px; text-transform: uppercase; }
+  .hd-sub { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--txt-dim); letter-spacing: 0.5px; }
+  .badge-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .badge { font-family: 'Share Tech Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 2px; border: 1px solid; letter-spacing: 0.5px; }
+  .badge-teal   { color: var(--teal);   border-color: rgba(0,229,200,0.3);  background: rgba(0,229,200,0.08);  }
+  .badge-amber  { color: var(--amber);  border-color: rgba(255,176,32,0.3); background: rgba(255,176,32,0.08); }
+  .badge-red    { color: var(--red);    border-color: rgba(248,113,113,0.3);background: rgba(248,113,113,0.08);}
+  .badge-orange { color: var(--orange); border-color: rgba(251,146,60,0.3); background: rgba(251,146,60,0.08); }
+  .badge-blue   { color: var(--blue);   border-color: rgba(56,189,248,0.3); background: rgba(56,189,248,0.08); }
+
+  #playPauseBtn {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; border: 1px solid rgba(255,176,32,0.35); border-radius: 4px;
+    background: rgba(255,176,32,0.08); color: var(--amber); cursor: pointer; transition: background 0.2s;
+  }
+  #playPauseBtn:hover { background: rgba(255,176,32,0.15); }
+  #playPauseBtn.paused { border-color: rgba(0,229,200,0.35); background: rgba(0,229,200,0.08); color: var(--teal); }
+
+  /* LAYOUT */
+  .layout { display: grid; grid-template-columns: 1fr 340px; gap: 14px; align-items: start; }
+  @media (max-width: 920px) { .layout { grid-template-columns: 1fr; } }
+  .left-col, .right-col { display: flex; flex-direction: column; gap: 14px; }
+
+  /* PANELS */
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .panel-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--border); background: rgba(14,32,48,0.5); }
+  .panel-title { font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; color: var(--txt); letter-spacing: 1.5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .panel-body { padding: 14px 16px; }
+
+  /* MAIN CANVAS */
+  .canvas-wrap { position: relative; background: #020810; border-bottom: 1px solid var(--border); }
+  #mainCanvas { display: block; width: 100%; aspect-ratio: 2.8/1; }
+
+  .legend {
+    position: absolute; top: 12px; left: 12px;
+    background: rgba(5,11,18,0.88); border: 1px solid var(--border2);
+    border-radius: 4px; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 7px; backdrop-filter: blur(6px);
+  }
+  .legend label { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  .legend label input { display: none; }
+  .legend-dot { width: 24px; height: 2px; border-radius: 1px; flex-shrink: 0; transition: opacity 0.2s; }
+  .legend label span { font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 0.8px; text-transform: uppercase; transition: color 0.2s; }
+  .legend label:has(input:not(:checked)) .legend-dot { opacity: 0.2; }
+  .legend label:has(input:not(:checked)) span { color: var(--txt-dim) !important; }
+
+  .corner-readout { position: absolute; top: 12px; right: 12px; font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--txt-dim); display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .corner-readout span { color: var(--teal); }
+
+  /* ZOOM */
+  #zoomCanvas { display: block; width: 100%; aspect-ratio: 5/1; background: #020810; }
+  .zoom-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; }
+  .zoom-legend-item { display: flex; align-items: center; gap: 6px; font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 0.5px; color: var(--txt-dim); }
+  .zoom-legend-item .swatch { width: 20px; height: 2px; border-radius: 1px; }
+  .zoom-legend-item .swatch.dashed { border-top: 2px dashed #3e6080; background: none; height: 0; }
+
+  /* INFO BOX */
+  .info-box { padding: 10px 14px; background: rgba(0,229,200,0.03); border: 1px solid rgba(0,229,200,0.1); border-radius: 4px; font-size: 12px; color: var(--txt-dim); line-height: 1.6; margin-bottom: 12px; }
+  .info-box code { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--teal); background: rgba(0,229,200,0.08); padding: 1px 5px; border-radius: 2px; }
+  .info-box strong { color: var(--txt); }
+
+  /* METRICS */
+  .metrics-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .metric-box { padding: 10px; border: 1px solid var(--border); border-radius: 4px; background: rgba(0,0,0,0.2); }
+  .metric-label { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--txt-dim); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .metric-value { font-family: 'Share Tech Mono', monospace; font-size: 18px; }
+  .metric-value.teal { color: var(--teal); }
+  .metric-value.fuchsia { color: var(--fuchsia); }
+  .metric-unit { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--txt-dim); }
+
+  /* NOISE BLOCKS */
+  .noise-block { border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+  .noise-block:last-child { margin-bottom: 0; }
+  .noise-block-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  .noise-block-header .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .noise-block-inner { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+
+  .nb-wander .noise-block-header { background: rgba(56,189,248,0.07);  color: var(--blue);   border-bottom: 1px solid rgba(56,189,248,0.15); }
+  .nb-wander .dot                 { background: var(--blue); }
+  .nb-hum    .noise-block-header { background: rgba(251,146,60,0.07);  color: var(--orange); border-bottom: 1px solid rgba(251,146,60,0.15); }
+  .nb-hum    .dot                 { background: var(--orange); }
+  .nb-emg    .noise-block-header { background: rgba(248,113,113,0.07); color: var(--red);    border-bottom: 1px solid rgba(248,113,113,0.15); }
+  .nb-emg    .dot                 { background: var(--red); }
+
+  /* DUAL SLIDERS */
+  .dual-slider { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .slider-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .slider-label { font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 0.5px; color: var(--txt-dim); }
+  .slider-value { font-family: 'Share Tech Mono', monospace; font-size: 10px; padding: 2px 6px; border-radius: 2px; border: 1px solid; min-width: 54px; text-align: right; }
+  .sv-blue   { color: var(--blue);   border-color: rgba(56,189,248,0.2);  background: rgba(56,189,248,0.06);  }
+  .sv-orange { color: var(--orange); border-color: rgba(251,146,60,0.2);  background: rgba(251,146,60,0.06);  }
+  .sv-red    { color: var(--red);    border-color: rgba(248,113,113,0.2); background: rgba(248,113,113,0.06); }
+  .sv-teal   { color: var(--teal);   border-color: rgba(0,229,200,0.2);   background: rgba(0,229,200,0.06);   }
+
+  input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+  input[type=range]::-webkit-slider-runnable-track { height: 3px; background: var(--border2); border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%; cursor: pointer; margin-top: -5px; }
+  input[type=range].t-blue::-webkit-slider-thumb   { background: var(--blue);   box-shadow: 0 0 7px rgba(56,189,248,0.5); }
+  input[type=range].t-orange::-webkit-slider-thumb { background: var(--orange); box-shadow: 0 0 7px rgba(251,146,60,0.5); }
+  input[type=range].t-red::-webkit-slider-thumb    { background: var(--red);    box-shadow: 0 0 7px rgba(248,113,113,0.5);}
+  input[type=range].t-teal::-webkit-slider-thumb   { background: var(--teal);   box-shadow: 0 0 7px rgba(0,229,200,0.5); }
+  input[type=range]:focus { outline: none; }
+
+  /* TOGGLES */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; background: rgba(255,255,255,0.015); cursor: pointer; transition: border-color 0.2s; }
+  .toggle-row:hover { border-color: var(--border2); }
+  .toggle-row:last-child { margin-bottom: 0; }
+  .toggle-name { font-family: 'Barlow Condensed', sans-serif; font-size: 14px; font-weight: 600; color: var(--txt); }
+  .toggle-desc { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: var(--txt-dim); margin-top: 2px; }
+  .toggle-switch { width: 40px; height: 22px; border-radius: 11px; border: 1px solid var(--border2); background: var(--border2); position: relative; transition: background 0.2s, border-color 0.2s; flex-shrink: 0; }
+  .toggle-switch.on { background: rgba(0,229,200,0.2); border-color: var(--teal); }
+  .toggle-knob { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--txt-dim); transition: left 0.2s, background 0.2s; }
+  .toggle-switch.on .toggle-knob { left: 20px; background: var(--teal); box-shadow: 0 0 8px rgba(0,229,200,0.4); }
+  .toggle-row input[type=checkbox] { display: none; }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="hd-left">
+    <div class="hd-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+    </div>
+    <div>
+      <div class="hd-title">Clinical ECG Processing</div>
+      <div class="hd-sub">Butterworth · Notch · filtfilt — DSP-correct zero-phase filtering @ 700 Hz</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <div class="badge-row">
+      <div class="badge badge-teal">Fs = 700 Hz</div>
+      <div class="badge badge-teal">ORDER 4</div>
+      <div class="badge badge-amber">PAD = 2100 smp</div>
+      <div class="badge badge-red" id="statusBadge">● LIVE</div>
+    </div>
+    <button id="playPauseBtn">
+      <svg id="pauseIcon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      <svg id="playIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <span id="ppText">PAUSE</span>
+    </button>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- LEFT -->
+  <div class="left-col">
+
+    <div class="panel">
+      <div class="canvas-wrap">
+        <div class="legend">
+          <label><input type="checkbox" id="togRaw" checked>
+            <div class="legend-dot" style="background:var(--lime)"></div>
+            <span style="color:var(--lime)">RAW (NOISY)</span>
+          </label>
+          <label><input type="checkbox" id="togStd">
+            <div class="legend-dot" style="background:var(--fuchsia)"></div>
+            <span style="color:var(--fuchsia)">STANDARD IIR (DELAYED)</span>
+          </label>
+          <label><input type="checkbox" id="togZp" checked>
+            <div class="legend-dot" style="background:var(--teal)"></div>
+            <span style="color:var(--teal)">ZERO-PHASE filtfilt (ALIGNED)</span>
+          </label>
+        </div>
+        <div class="corner-readout">
+          <div>SPEED <span>25 mm/s</span></div>
+          <div>GAIN <span>10 mm/mV</span></div>
+          <div>Fs <span>700 Hz</span></div>
+        </div>
+        <canvas id="mainCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- ZOOM PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="var(--fuchsia)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          R-Peak Timing Analysis — Static Zoom
+        </div>
+        <div class="badge badge-teal">5.40 s → 5.70 s</div>
+      </div>
+      <div class="panel-body">
+        <div class="info-box">
+          Magnified view proving the necessity of <code>filtfilt</code>. Standard causal IIR (purple) introduces a
+          <strong>phase shift</strong> that delays R-peak timing. Zero-phase filtering (teal) corrects this by
+          applying the filter forward <em>and</em> backward — doubling effective order with <strong>zero group delay</strong>.
+          Pad = <strong>2100 smp</strong> = 3 s at 700 Hz (1.5× settling time of the 0.5 Hz highpass), preventing edge transients.
+        </div>
+        <div class="zoom-legend">
+          <div class="zoom-legend-item"><div class="swatch dashed"></div>IDEAL (PURE ECG)</div>
+          <div class="zoom-legend-item"><div class="swatch" style="background:var(--fuchsia)"></div>STANDARD IIR</div>
+          <div class="zoom-legend-item"><div class="swatch" style="background:var(--teal)"></div>ZERO-PHASE filtfilt</div>
+        </div>
+        <canvas id="zoomCanvas"></canvas>
+        <div class="metrics-row" style="margin-top:12px">
+          <div class="metric-box">
+            <div class="metric-label">Group delay — IIR @ 10 Hz</div>
+            <div class="metric-value fuchsia" id="metDelay">—</div>
+            <div class="metric-unit">ms (causal shift)</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Group delay — filtfilt</div>
+            <div class="metric-value teal">0.00</div>
+            <div class="metric-unit">ms (by construction)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /left-col -->
+
+  <!-- RIGHT -->
+  <div class="right-col">
+
+    <!-- NOISE -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="var(--amber)" stroke-width="2" viewBox="0 0 24 24"><polyline points="2 12 7 12 12 2 17 12 22 12"/></svg>
+          Environment Noise
+        </div>
+        <div class="badge badge-amber">3 SOURCES</div>
+      </div>
+      <div class="panel-body">
+
+        <!-- WANDER -->
+        <div class="noise-block nb-wander">
+          <div class="noise-block-header">
+            <div style="display:flex;align-items:center;gap:8px"><div class="dot"></div>Baseline Wander</div>
+            <div class="badge badge-blue" style="font-size:9px">SINUSOIDAL</div>
+          </div>
+          <div class="noise-block-inner">
+            <div class="dual-slider">
+              <div>
+                <div class="slider-label-row">
+                  <span class="slider-label">AMPLITUDE</span>
+                  <span class="slider-value sv-blue" id="vWA">0.50 mV</span>
+                </div>
+                <input type="range" class="t-blue" id="sWA" min="0" max="1" step="0.05" value="0.5">
+              </div>
+              <div>
+                <div class="slider-label-row">
+                  <span class="slider-label">FREQUENCY</span>
+                  <span class="slider-value sv-blue" id="vWF">0.20 Hz</span>
+                </div>
+                <input type="range" class="t-blue" id="sWF" min="0.05" max="1.0" step="0.05" value="0.2">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HUM -->
+        <div class="noise-block nb-hum">
+          <div class="noise-block-header">
+            <div style="display:flex;align-items:center;gap:8px"><div class="dot"></div>Mains Hum</div>
+            <div class="badge badge-orange" style="font-size:9px">SINUSOIDAL</div>
+          </div>
+          <div class="noise-block-inner">
+            <div class="dual-slider">
+              <div>
+                <div class="slider-label-row">
+                  <span class="slider-label">AMPLITUDE</span>
+                  <span class="slider-value sv-orange" id="vHA">0.20 mV</span>
+                </div>
+                <input type="range" class="t-orange" id="sHA" min="0" max="1" step="0.05" value="0.2">
+              </div>
+              <div>
+                <div class="slider-label-row">
+                  <span class="slider-label">FREQUENCY</span>
+                  <span class="slider-value sv-orange" id="vHF">50.0 Hz</span>
+                </div>
+                <!-- 45–65 Hz covers EU 50 Hz and US 60 Hz mains -->
+                <input type="range" class="t-orange" id="sHF" min="45" max="65" step="1" value="50">
+              </div>
+            </div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txt-dim)">
+              Notch filter centre freq tracks this slider automatically.
+            </div>
+          </div>
+        </div>
+
+        <!-- EMG -->
+        <div class="noise-block nb-emg">
+          <div class="noise-block-header">
+            <div style="display:flex;align-items:center;gap:8px"><div class="dot"></div>Muscle / EMG</div>
+            <div class="badge badge-red" style="font-size:9px">BANDLIMITED</div>
+          </div>
+          <div class="noise-block-inner">
+            <div class="dual-slider">
+              <div>
+                <div class="slider-label-row">
+                  <span class="slider-label">AMPLITUDE</span>
+                  <span class="slider-value sv-red" id="vEA">0.10 mV</span>
+                </div>
+                <input type="range" class="t-red" id="sEA" min="0" max="0.5" step="0.025" value="0.1">
+              </div>
+              <div>
+                <div class="slider-label-row">
+                  <span class="slider-label">ONSET FREQ</span>
+                  <span class="slider-value sv-red" id="vEF">80 Hz</span>
+                </div>
+                <!-- EMG energy 50–250 Hz; onset = highpass floor of the noise band -->
+                <input type="range" class="t-red" id="sEF" min="20" max="200" step="10" value="80">
+              </div>
+            </div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--txt-dim);line-height:1.5">
+              Bandlimited white noise above onset freq.<br>Models electrode movement artefact.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /noise panel -->
+
+    <!-- FILTER PIPELINE -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="var(--blue)" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>
+          Filter Pipeline
+        </div>
+      </div>
+      <div class="panel-body">
+        <label class="toggle-row" for="chkBP">
+          <div>
+            <div class="toggle-name">Butterworth Band-Pass</div>
+            <div class="toggle-desc">0.5 – 40 Hz · Order 4 · 2 × cascaded biquads</div>
+          </div>
+          <div class="toggle-switch on" id="swBP"><div class="toggle-knob"></div></div>
+          <input type="checkbox" id="chkBP" checked>
+        </label>
+        <label class="toggle-row" for="chkN">
+          <div>
+            <div class="toggle-name">Notch Filter</div>
+            <div class="toggle-desc" id="notchDesc">50 Hz · Q = 30 · tracks hum slider</div>
+          </div>
+          <div class="toggle-switch on" id="swN"><div class="toggle-knob"></div></div>
+          <input type="checkbox" id="chkN" checked>
+        </label>
+      </div>
+    </div>
+
+    <!-- DSP NOTES -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="var(--teal)" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          DSP Correctness Notes
+        </div>
+      </div>
+      <div class="panel-body" style="display:flex;flex-direction:column;gap:8px">
+        <div class="info-box" style="margin-bottom:0">
+          <strong>Fs = 700 Hz.</strong> Nyquist = 350 Hz. All noise sources are well below this.
+          The 40 Hz lowpass attenuates EMG before the notch removes the residual mains line.
+        </div>
+        <div class="info-box" style="margin-bottom:0">
+          <strong>Pad = 2100 smp</strong> = 1.5 × (Fs / f<sub>c</sub>) = 1.5 × 1400.
+          Reflect-padding uses <code>signal[PAD−1−i]</code> (off-by-one corrected) to mirror both edges symmetrically,
+          minimising the DC step that would otherwise ring through the 0.5 Hz highpass.
+        </div>
+        <div class="info-box" style="margin-bottom:0">
+          <strong>Notch</strong> centre frequency updates in real-time to match the hum slider (45–65 Hz range covers both EU 50 Hz and US 60 Hz mains).
+          <strong>EMG</strong> is modelled as white noise fed through a 1st-order highpass at the onset frequency, then RMS-normalised.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /right-col -->
+</div><!-- /layout -->
+</div><!-- /wrap -->
+
+<script>
+/* ═══════════════════════════════════════════════════
+   DSP CORE  —  700 Hz, corrected filtfilt
+═══════════════════════════════════════════════════ */
+const Fs       = 700;          // sample rate
+const BUF_DUR  = 12;           // pre-computed buffer duration (s)
+const DISP_DUR = 3;            // visible window (s)
+const N        = Fs * BUF_DUR; // 8400 samples
+const PAD      = 2100;         // filtfilt pad = 1.5 × (Fs/fc_min) = 1.5 × 1400
+
+class Biquad {
+  constructor(type, freq, Q) {
+    this.type = type; this.freq = freq; this.Q = Q;
+    this.z1 = 0; this.z2 = 0;
+    this._calc();
+  }
+  _calc() {
+    const w0    = 2 * Math.PI * this.freq / Fs;
+    const sw    = Math.sin(w0), cw = Math.cos(w0);
+    const alpha = sw / (2 * this.Q);
+    let b0, b1, b2, a0, a1, a2;
+    switch (this.type) {
+      case 'lowpass':
+        b0=(1-cw)/2; b1=1-cw;    b2=(1-cw)/2;
+        a0=1+alpha;  a1=-2*cw;   a2=1-alpha; break;
+      case 'highpass':
+        b0=(1+cw)/2; b1=-(1+cw); b2=(1+cw)/2;
+        a0=1+alpha;  a1=-2*cw;   a2=1-alpha; break;
+      case 'notch':
+        b0=1;        b1=-2*cw;   b2=1;
+        a0=1+alpha;  a1=-2*cw;   a2=1-alpha; break;
+    }
+    this.b0=b0/a0; this.b1=b1/a0; this.b2=b2/a0;
+    this.a1=a1/a0; this.a2=a2/a0;
+  }
+  reset()  { this.z1=0; this.z2=0; }
+  process(x) {
+    const y   = this.b0*x + this.z1;
+    this.z1   = this.b1*x - this.a1*y + this.z2;
+    this.z2   = this.b2*x - this.a2*y;
+    return y;
+  }
+  /* Analytic group delay at f Hz → samples */
+  gd(f) {
+    const dw = 1e-5;
+    const ph = (om) => {
+      const zr=Math.cos(-om), zi=Math.sin(-om);
+      const z2r=Math.cos(-2*om), z2i=Math.sin(-2*om);
+      const nr=this.b0+this.b1*zr+this.b2*z2r, ni=this.b1*zi+this.b2*z2i;
+      const dr=1+this.a1*zr+this.a2*z2r,       di=this.a1*zi+this.a2*z2i;
+      return Math.atan2(ni*dr-nr*di, nr*dr+ni*di);
+    };
+    const w = 2*Math.PI*f/Fs;
+    return -(ph(w+dw)-ph(w-dw))/(2*dw);
+  }
+}
+
+function makeFilters(s) {
+  const f = [];
+  if (s.bandpass) {
+    // 4th-order Butterworth: exact SOS Q-factors 0.5412 and 1.3065
+    f.push(new Biquad('highpass', 0.5, 0.5412));
+    f.push(new Biquad('highpass', 0.5, 1.3065));
+    f.push(new Biquad('lowpass',  40,  0.5412));
+    f.push(new Biquad('lowpass',  40,  1.3065));
+  }
+  if (s.notch) {
+    // Centre freq tracks hum slider
+    f.push(new Biquad('notch', s.humHz, 30));
+  }
+  return f;
+}
+
+function totalGdMs(filters, f) {
+  let s = 0;
+  filters.forEach(filt => { s += filt.gd(f); });
+  return (s / Fs) * 1000;
+}
+
+function runFilters(sig, filters) {
+  filters.forEach(f => f.reset());
+  const out = new Float32Array(sig.length);
+  for (let i = 0; i < sig.length; i++) {
+    let v = sig[i];
+    filters.forEach(f => { v = f.process(v); });
+    out[i] = v;
+  }
+  return out;
+}
+
+/*
+ * filtfilt — zero-phase.
+ * PAD = 2100 (1.5 × Fs/fc_min at 700 Hz).
+ * Reflect-pad: index-corrected, no off-by-one.
+ */
+function filtfilt(sig, filters) {
+  const total = N + 2*PAD;
+  const padded = new Float32Array(total);
+  for (let i = 0; i < PAD; i++) padded[i]         = sig[Math.min(PAD-1-i, N-1)];
+  for (let i = 0; i < N;   i++) padded[PAD+i]     = sig[i];
+  for (let i = 0; i < PAD; i++) padded[PAD+N+i]   = sig[Math.max(N-2-i, 0)];
+
+  const fwd = runFilters(padded, filters);
+
+  for (let i=0, j=fwd.length-1; i<j; i++, j--) {
+    const tmp=fwd[i]; fwd[i]=fwd[j]; fwd[j]=tmp;
+  }
+
+  const bwd = runFilters(fwd, filters);
+
+  const result = new Float32Array(N);
+  for (let i = 0; i < N; i++) result[i] = bwd[total-1-(i+PAD)];
+  return result;
+}
+
+/* ═══════════════════════════════════════════════════
+   SIGNAL GENERATION
+═══════════════════════════════════════════════════ */
+const t = new Float32Array(N);
+for (let i=0; i<N; i++) t[i] = i/Fs;
+
+let pure    = new Float32Array(N);
+let noisy   = new Float32Array(N);
+let stdFilt = new Float32Array(N);
+let zpFilt  = new Float32Array(N);
+let emgCache = null;   // invalidated when emgHz changes
+
+/* Bandlimited EMG: white noise → 1st-order HP at onset freq → RMS-normalise */
+function makeEmgNoise(onsetHz) {
+  const w0  = 2*Math.PI*onsetHz/Fs;
+  const alp = (1 - Math.tan(w0/2)) / (1 + Math.tan(w0/2));
+  let xp=0, yp=0;
+  const out = new Float32Array(N);
+  for (let i=0; i<N; i++) {
+    const x = (Math.random()-0.5)*2;
+    const y = 0.5*(1+alp)*x - 0.5*(1+alp)*xp + alp*yp;
+    xp=x; yp=y; out[i]=y;
+  }
+  let rms=0; for (let i=0; i<N; i++) rms += out[i]*out[i];
+  rms = Math.sqrt(rms/N);
+  if (rms>0) for (let i=0; i<N; i++) out[i] /= rms;
+  return out;
+}
+
+const gauss = (c,w,a,ti) => a * Math.exp(-((ti-c)**2)/(2*w*w));
+
+function buildPure() {
+  const interval = 60/62;
+  for (let i=0; i<N; i++) {
+    let v=0;
+    for (let b=0.5; b<BUF_DUR+1; b+=interval) {
+      v += gauss(b-0.160, 0.015,  0.13, t[i]);
+      v += gauss(b-0.020, 0.010, -0.14, t[i]);
+      v += gauss(b,       0.011,  1.20, t[i]);
+      v += gauss(b+0.020, 0.010, -0.24, t[i]);
+      v += gauss(b+0.195, 0.040,  0.28, t[i]);
+    }
+    pure[i]=v;
+  }
+}
+
+const state = {
+  wanderAmp:0.5, wanderHz:0.20,
+  humAmp:0.2,    humHz:50,
+  emgAmp:0.1,    emgHz:80,
+  bandpass:true, notch:true,
+  showRaw:true,  showStd:false, showZp:true,
+  playing:true,  pt:0
+};
+
+function rebuild() {
+  if (!emgCache) emgCache = makeEmgNoise(state.emgHz);
+
+  for (let i=0; i<N; i++) {
+    const wander = state.wanderAmp * 0.5 * Math.sin(2*Math.PI*state.wanderHz*t[i]);
+    const hum    = state.humAmp * Math.sin(2*Math.PI*state.humHz*t[i]);
+    const fade   = Math.min(1, i/(Fs*0.15), (N-i)/(Fs*0.15));
+    noisy[i]     = pure[i] + wander + hum + emgCache[i]*state.emgAmp*fade;
+  }
+
+  const filters = makeFilters(state);
+  if (filters.length === 0) {
+    stdFilt = noisy.slice(); zpFilt = noisy.slice();
+  } else {
+    stdFilt = runFilters(noisy, filters);
+    zpFilt  = filtfilt(noisy, filters);
+    document.getElementById('metDelay').textContent = totalGdMs(filters, 10).toFixed(1);
+  }
+
+  document.getElementById('notchDesc').textContent =
+    `${state.humHz} Hz · Q = 30 · tracks hum slider`;
+
+  drawZoom();
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDERING
+═══════════════════════════════════════════════════ */
+const mainCvs = document.getElementById('mainCanvas');
+const zoomCvs = document.getElementById('zoomCanvas');
+
+function resize(cvs) {
+  const dpr=window.devicePixelRatio||1, rect=cvs.getBoundingClientRect();
+  if (cvs.width!==rect.width*dpr||cvs.height!==rect.height*dpr) {
+    cvs.width=rect.width*dpr; cvs.height=rect.height*dpr;
+  }
+  const ctx=cvs.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx, w:rect.width, h:rect.height};
+}
+
+function drawGrid(ctx,w,h) {
+  ctx.lineWidth=0.5; ctx.strokeStyle='rgba(0,229,200,0.06)';
+  ctx.beginPath();
+  for (let x=0;x<=w;x+=10){ctx.moveTo(x,0);ctx.lineTo(x,h);}
+  for (let y=0;y<=h;y+=10){ctx.moveTo(0,y);ctx.lineTo(w,y);}
+  ctx.stroke();
+  ctx.lineWidth=0.8; ctx.strokeStyle='rgba(0,229,200,0.14)';
+  ctx.beginPath();
+  for (let x=0;x<=w;x+=50){ctx.moveTo(x,0);ctx.lineTo(x,h);}
+  for (let y=0;y<=h;y+=50){ctx.moveTo(0,y);ctx.lineTo(w,y);}
+  ctx.stroke();
+  ctx.lineWidth=0.8; ctx.strokeStyle='rgba(0,229,200,0.28)';
+  ctx.setLineDash([3,5]);
+  ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function plot(ctx,data,si,ns,w,h,color,lw,glow,alpha) {
+  ctx.save();
+  ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=lw;
+  ctx.globalAlpha=alpha??1;
+  if (glow){ctx.shadowBlur=8;ctx.shadowColor=color;}
+  for (let i=0;i<ns;i++) {
+    const x=(i/ns)*w;
+    const v=Math.max(-1.8, Math.min(1.8, data[(si+i)%N]));
+    const y=h-((v+1.8)/3.6)*h;
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+function drawMain() {
+  const {ctx,w,h}=resize(mainCvs);
+  ctx.clearRect(0,0,w,h);
+  drawGrid(ctx,w,h);
+  const si=Math.floor(state.pt*Fs), ns=Math.floor(DISP_DUR*Fs);
+  if (state.showRaw) plot(ctx,noisy,  si,ns,w,h,'#b8f23a',1.5,false,0.55);
+  if (state.showStd) plot(ctx,stdFilt,si,ns,w,h,'#e040fb',2.5,true, 1.0);
+  if (state.showZp)  plot(ctx,zpFilt, si,ns,w,h,'#00e5c8',2.5,true, 1.0);
+}
+
+function drawZoom() {
+  const {ctx,w,h}=resize(zoomCvs);
+  ctx.clearRect(0,0,w,h);
+  ctx.lineWidth=0.5; ctx.strokeStyle='rgba(0,229,200,0.08)';
+  ctx.beginPath();
+  for (let x=0;x<=w;x+=20){ctx.moveTo(x,0);ctx.lineTo(x,h);}
+  for (let y=0;y<=h;y+=20){ctx.moveTo(0,y);ctx.lineTo(w,y);}
+  ctx.stroke();
+  const zS=Math.floor(5.40*Fs), zN=Math.floor(0.30*Fs);
+  ctx.save(); ctx.setLineDash([5,4]);
+  plot(ctx,pure,   zS,zN,w,h,'#3e6080',1.5,false,1.0);
+  ctx.restore();
+  plot(ctx,stdFilt,zS,zN,w,h,'#e040fb',2.0,false,1.0);
+  plot(ctx,zpFilt, zS,zN,w,h,'#00e5c8',2.0,false,1.0);
+}
+
+/* ═══════════════════════════════════════════════════
+   ANIMATION
+═══════════════════════════════════════════════════ */
+let lastTs=null;
+function loop(ts) {
+  if (state.playing) {
+    if (lastTs!==null) state.pt=(state.pt+(ts-lastTs)/1000)%BUF_DUR;
+    lastTs=ts; drawMain();
+  } else { lastTs=null; }
+  requestAnimationFrame(loop);
+}
+
+/* ═══════════════════════════════════════════════════
+   UI BINDINGS
+═══════════════════════════════════════════════════ */
+function bindSlider(id, key, dispId, fmt, resetEmg) {
+  document.getElementById(id).addEventListener('input', e => {
+    state[key]=parseFloat(e.target.value);
+    document.getElementById(dispId).textContent=fmt(state[key]);
+    if (resetEmg) emgCache=null;
+    rebuild();
+  });
+}
+bindSlider('sWA','wanderAmp','vWA', v=>v.toFixed(2)+' mV', false);
+bindSlider('sWF','wanderHz', 'vWF', v=>v.toFixed(2)+' Hz', false);
+bindSlider('sHA','humAmp',   'vHA', v=>v.toFixed(2)+' mV', false);
+bindSlider('sHF','humHz',    'vHF', v=>v.toFixed(1)+' Hz', false);
+bindSlider('sEA','emgAmp',   'vEA', v=>v.toFixed(3)+' mV', false);
+bindSlider('sEF','emgHz',    'vEF', v=>Math.round(v)+' Hz', true);
+
+function bindToggle(chkId, swId, key) {
+  document.querySelector(`label[for="${chkId}"]`).addEventListener('click', e => {
+    e.preventDefault();
+    const chk=document.getElementById(chkId);
+    chk.checked=!chk.checked; state[key]=chk.checked;
+    document.getElementById(swId).classList.toggle('on', chk.checked);
+    rebuild();
+  });
+}
+bindToggle('chkBP','swBP','bandpass');
+bindToggle('chkN', 'swN', 'notch');
+
+['togRaw','togStd','togZp'].forEach((id,i)=>{
+  const keys=['showRaw','showStd','showZp'];
+  document.getElementById(id).addEventListener('change',e=>{state[keys[i]]=e.target.checked;});
+});
+
+document.getElementById('playPauseBtn').addEventListener('click',()=>{
+  state.playing=!state.playing;
+  document.getElementById('playIcon').classList.toggle('hidden', state.playing);
+  document.getElementById('pauseIcon').classList.toggle('hidden',!state.playing);
+  document.getElementById('ppText').textContent=state.playing?'PAUSE':'RESUME';
+  document.getElementById('statusBadge').textContent=state.playing?'● LIVE':'◼ PAUSED';
+  document.getElementById('playPauseBtn').classList.toggle('paused',!state.playing);
+});
+
+window.addEventListener('resize', drawZoom);
+
+/* ═══════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════ */
+buildPure();
+emgCache = makeEmgNoise(state.emgHz);
+rebuild();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
