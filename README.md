@@ -8,8 +8,15 @@ No install. No dependencies. Open an HTML file and teach.
 
 ---
 
-![Dark](assets/screenshot-dark.png)
-![Light](assets/screenshot-Light.png)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-0369a1?style=for-the-badge)](https://sjelodari.github.io/ECG-Simulator/)
+[![Dark Theme](https://img.shields.io/badge/Open-Dark%20Theme-0d1117?style=for-the-badge)](https://sjelodari.github.io/ECG-Simulator/ecg_simulator_dark.html)
+[![Light Theme](https://img.shields.io/badge/Open-Light%20Theme-e2e8f0?style=for-the-badge&labelColor=64748b)](https://sjelodari.github.io/ECG-Simulator/ecg_simulator_light.html)
+
+---
+
+| Dark Theme | Light Theme |
+|---|---|
+| ![Dark](assets/screenshot-dark.png) | ![Light](assets/screenshot-light.png) |
 
 </div>
 
@@ -17,10 +24,7 @@ No install. No dependencies. Open an HTML file and teach.
 
 ## ⚡ Quick Start
 
-```bash
-git clone https://github.com/your-username/ecg-dsp-simulator
-```
-Then open either file directly in your browser — that's it.
+Clone the repo and open either file directly in your browser:
 
 | File | Theme |
 |------|-------|
@@ -56,8 +60,8 @@ Noise in  →  [ Butterworth 0.5–40 Hz ]  →  [ Notch 50/60 Hz ]
 The **R-Peak Timing Analysis** zoom panel makes the phase-delay problem tangible:
 
 ```
-Pure ECG    ───────────▲───────────
-Standard IIR ──────────────▲───────   ← delayed by ~Xms
+Pure ECG     ───────────▲───────────
+Standard IIR ──────────────▲───────   ← delayed by ~X ms
 Zero-phase   ───────────▲───────────  ← perfectly aligned
 ```
 
