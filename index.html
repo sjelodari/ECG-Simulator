@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECG DSP Simulator</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f4f8;
+    padding: 24px;
+  }
+  .card {
+    background: white;
+    border-radius: 8px;
+    border-top: 3px solid #0369a1;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    max-width: 520px;
+    width: 100%;
+    padding: 40px;
+    text-align: center;
+  }
+  .icon { font-size: 48px; margin-bottom: 16px; }
+  h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 28px; font-weight: 800;
+    color: #1a2e45; letter-spacing: 1px;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+  .sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; color: #7a94b0;
+    letter-spacing: 0.5px; margin-bottom: 32px;
+  }
+  .divider { border: none; border-top: 1px solid #dde4ed; margin: 0 0 32px; }
+  .btn-row { display: flex; gap: 12px; flex-direction: column; }
+  .btn {
+    display: block; text-decoration: none;
+    padding: 14px 20px; border-radius: 6px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+  .btn-dark {
+    background: #0d1117; color: #00e5c8;
+    border: 1px solid #15304a;
+  }
+  .btn-light {
+    background: #fffaf7; color: #0369a1;
+    border: 1px solid #c4cfdd;
+  }
+  .btn-label { font-size: 10px; font-weight: 400; opacity: 0.7; display: block; font-family: 'Share Tech Mono', monospace; margin-top: 2px; letter-spacing: 0.3px; }
+  .tags { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+  .tag { font-family: 'Share Tech Mono', monospace; font-size: 10px; padding: 3px 8px; border-radius: 3px; border: 1px solid #dde4ed; color: #7a94b0; background: #f7fafc; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🫀</div>
+  <h1>ECG DSP Simulator</h1>
+  <p class="sub">Butterworth · Notch · filtfilt · 700 Hz · Zero-phase filtering</p>
+  <hr class="divider">
+  <div class="btn-row">
+    <a class="btn btn-dark" href="ecg_simulator_dark.html">
+      ◼ Dark Theme
+      <span class="btn-label">Monitor-style · projection-friendly</span>
+    </a>
+    <a class="btn btn-light" href="ecg_simulator_light.html">
+      ◻ Light Theme
+      <span class="btn-label">ECG paper-style · print-friendly</span>
+    </a>
+  </div>
+  <div class="tags">
+    <span class="tag">Fs = 700 Hz</span>
+    <span class="tag">Order 4</span>
+    <span class="tag">filtfilt</span>
+    <span class="tag">No install</span>
+  </div>
+</div>
+</body>
+</html>
