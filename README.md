@@ -9,8 +9,8 @@ No install. No dependencies. Open an HTML file and teach.
 ---
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-0369a1?style=for-the-badge)](https://sjelodari.github.io/ECG-Simulator/)
-[![Dark Theme](https://img.shields.io/badge/Open-Dark%20Theme-0d1117?style=for-the-badge)](https://sjelodari.github.io/ECG-Simulator/ecg_simulator_dark.html)
-[![Light Theme](https://img.shields.io/badge/Open-Light%20Theme-e2e8f0?style=for-the-badge&labelColor=64748b)](https://sjelodari.github.io/ECG-Simulator/ecg_simulator_light.html)
+[![Dark Theme](https://img.shields.io/badge/Open-Dark%20Theme-0d1117?style=for-the-badge)](https://sjelodari.github.io/ECG-Simulator/ECG-Simulator-Dark.html)
+[![Light Theme](https://img.shields.io/badge/Open-Light%20Theme-e2e8f0?style=for-the-badge&labelColor=64748b)](https://sjelodari.github.io/ECG-Simulator/ECG-Simulator-Light.html)
 
 ---
 
