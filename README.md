@@ -4,7 +4,7 @@
 
 **An interactive, browser-based tool for teaching digital signal processing through real-time ECG filtering.**
 
-No install. No dependencies. Open an HTML file and teach.
+No install. No dependencies.
 
 ---
 
@@ -16,7 +16,7 @@ No install. No dependencies. Open an HTML file and teach.
 
 | Dark Theme | Light Theme |
 |---|---|
-| ![Dark](assets/screenshot-dark.png) | ![Light](assets/screenshot-light.png) |
+| ![Dark](assets/screenshot-dark.png) | ![Light](assets/screenshot-Light.png) |
 
 </div>
 
@@ -28,8 +28,8 @@ Clone the repo and open either file directly in your browser:
 
 | File | Theme |
 |------|-------|
-| `ecg_simulator_dark.html` | Monitor-style · dark background |
-| `ecg_simulator_light.html` | ECG paper-style · warm white |
+| `ECG-Simulator-Dark.html` | Monitor-style · dark background |
+| `ECG_Simulator_Light.html` | ECG paper-style · warm white |
 
 ---
 
